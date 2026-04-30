@@ -19,11 +19,11 @@ defmodule SpiffeEx.OidcClientTest do
     name = :"oidc_test_#{System.unique_integer([:positive])}"
 
     result =
-      safe_retrieve("dummy.jwt.token", [
+      safe_retrieve("dummy.jwt.token",
         name: name,
         client_id: "test-client",
         retry_policy: [max: 2, base_ms: 1]
-      ])
+      )
 
     assert {:error, :idp_unreachable} = result
   end
@@ -32,11 +32,11 @@ defmodule SpiffeEx.OidcClientTest do
     name = :"oidc_retry_#{System.unique_integer([:positive])}"
 
     result =
-      safe_retrieve("dummy.jwt.token", [
+      safe_retrieve("dummy.jwt.token",
         name: name,
         client_id: "test-client",
         retry_policy: [max: 1, base_ms: 1]
-      ])
+      )
 
     assert {:error, :idp_unreachable} = result
   end
@@ -47,11 +47,11 @@ defmodule SpiffeEx.OidcClientTest do
     name = :"oidc_jwks_#{System.unique_integer([:positive])}"
 
     result =
-      safe_retrieve("dummy.jwt.token", [
+      safe_retrieve("dummy.jwt.token",
         name: name,
         client_id: "test-client",
         retry_policy: [max: 3, base_ms: 1]
-      ])
+      )
 
     assert {:error, :idp_unreachable} = result
   end

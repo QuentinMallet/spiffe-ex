@@ -10,7 +10,7 @@ defmodule SpiffeEx.SvidCachePropertiesTest do
   end
 
   property "get always returns non-expired SVID for any refresh buffer" do
-    check all buffer <- refresh_buffer_seconds() do
+    check all(buffer <- refresh_buffer_seconds()) do
       name = :"svid_prop_#{System.unique_integer([:positive])}"
 
       # Use GenServer.start_link directly to avoid child-ID conflicts across iterations
@@ -35,7 +35,7 @@ defmodule SpiffeEx.SvidCachePropertiesTest do
   end
 
   property "concurrent get calls return consistent SVID token" do
-    check all n <- concurrent_caller_count() do
+    check all(n <- concurrent_caller_count()) do
       name = :"svid_concurrent_#{System.unique_integer([:positive])}"
 
       {:ok, pid} =

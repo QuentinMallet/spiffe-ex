@@ -65,8 +65,7 @@ defmodule SpiffeEx do
     oidcc_children =
       if provider_uri do
         [
-          {Oidcc.ProviderConfiguration.Worker,
-           %{issuer: provider_uri, name: oidcc_worker_name}}
+          {Oidcc.ProviderConfiguration.Worker, %{issuer: provider_uri, name: oidcc_worker_name}}
         ]
       else
         []

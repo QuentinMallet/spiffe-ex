@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  MIX_ENV: test
+  ELIXIR_VERSION: '1.17.3'
+  OTP_VERSION: '27.1'
+
+# Future work (deferred until prerequisites are met):
+#   - OTP/Elixir matrix: add {1.15.8/26.2} pair once compat is verified
+#   - Dialyzer: add {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false} to mix.exs first
+#   - Nix checks: add checks outputs to flake.nix, then re-enable nix flake check
+#   - Credo: add {:credo, "~> 1.7", only: [:dev, :test], runtime: false} to mix.exs first
+
+jobs:
+  ci:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Restore deps cache
+        uses: actions/cache@v4
+        with:
+          path: deps
+          key: ${{ runner.os }}-deps-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-deps-
+
+      - name: Restore _build cache
+        uses: actions/cache@v4
+        with:
+          path: _build
+          key: ${{ runner.os }}-build-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('mix.exs', 'mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-
+            ${{ runner.os }}-build-
+
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Check formatting
+        run: mix format --check-formatted
+
+      - name: Compile (warnings as errors)
+        run: mix compile --warnings-as-errors
+
+      - name: Run tests
+        run: mix test

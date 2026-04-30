@@ -26,7 +26,7 @@ defmodule SpiffeEx.MixProject do
     [
       # gRPC for SPIFFE Workload API
       {:grpc, "~> 0.9"},
-      {:protobuf, "~> 0.13"},
+      {:protobuf, "~> 0.14"},
       # OIDC
       {:oidcc, "~> 3.0"},
       {:jose, "~> 1.11"},

@@ -1,5 +1,6 @@
 defmodule SpiffeEx.SvidCache do
   use GenServer
+  require Logger
 
   @default_refresh_buffer_secs 30
   @ets_key :current_svid
@@ -42,6 +43,15 @@ defmodule SpiffeEx.SvidCache do
   @impl true
   def init(opts) do
     name = Keyword.fetch!(opts, :name)
+
+    opts =
+      if Keyword.has_key?(opts, :socket_path) and not Keyword.has_key?(opts, :endpoint) do
+        Logger.warning("SpiffeEx: :socket_path is deprecated, use :endpoint instead (e.g. endpoint: \"unix:#{Keyword.fetch!(opts, :socket_path)}\")")
+        Keyword.put(opts, :endpoint, "unix:#{Keyword.fetch!(opts, :socket_path)}")
+      else
+        opts
+      end
+
     table = :ets.new(ets_table(name), [:set, :public, :named_table, {:read_concurrency, true}])
 
     state = %{
@@ -69,10 +79,11 @@ defmodule SpiffeEx.SvidCache do
   @impl true
   def handle_info(:refresh, state) do
     workload_mod = Keyword.get(state.opts, :workload_api_mod, SpiffeEx.WorkloadAPI.GrpcAdapter)
-    socket_path = Keyword.fetch!(state.opts, :socket_path)
+    endpoint = resolve_endpoint(state.opts)
+    grpc_opts = resolve_grpc_opts(state.opts)
     audience = Keyword.get(state.opts, :audience, [])
 
-    case workload_mod.fetch_jwt_svid(socket_path, audience) do
+    case workload_mod.fetch_jwt_svid(endpoint, audience, grpc_opts) do
       {:ok, svid} ->
         :ets.insert(state.ets_table, {@ets_key, svid})
         timer = schedule_refresh(svid, state.opts)
@@ -90,10 +101,11 @@ defmodule SpiffeEx.SvidCache do
 
   defp fetch_svid(state) do
     workload_mod = Keyword.get(state.opts, :workload_api_mod, SpiffeEx.WorkloadAPI.GrpcAdapter)
-    socket_path = Keyword.fetch!(state.opts, :socket_path)
+    endpoint = resolve_endpoint(state.opts)
+    grpc_opts = resolve_grpc_opts(state.opts)
     audience = Keyword.get(state.opts, :audience, [])
 
-    case workload_mod.fetch_jwt_svid(socket_path, audience) do
+    case workload_mod.fetch_jwt_svid(endpoint, audience, grpc_opts) do
       {:ok, svid} ->
         :ets.insert(state.ets_table, {@ets_key, svid})
         timer = schedule_refresh(svid, state.opts)
@@ -112,6 +124,14 @@ defmodule SpiffeEx.SvidCache do
     ms = DateTime.diff(svid.expires_at, DateTime.utc_now(), :millisecond) - buffer * 1_000
     ms = max(0, ms)
     Process.send_after(self(), :refresh, ms)
+  end
+
+  defp resolve_endpoint(opts) do
+    Keyword.fetch!(opts, :endpoint)
+  end
+
+  defp resolve_grpc_opts(opts) do
+    Keyword.get(opts, :grpc_opts, [])
   end
 
   defp expired?(%SpiffeEx.SVID{expires_at: expires_at}) do

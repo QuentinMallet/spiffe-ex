@@ -7,10 +7,20 @@ defmodule SpiffeEx do
       {:ok, _pid} = SpiffeEx.start_link(
         provider_uri: "https://idp.example.com",
         client_id: "my-client",
-        socket_path: "/run/spire/sockets/agent.sock"
+        endpoint: "unix:/run/spire/sockets/agent.sock"
       )
 
       {:ok, %SpiffeEx.Token{}} = SpiffeEx.authenticate()
+
+  ## Options
+
+    * `:endpoint` — `String.t()` — SPIRE agent endpoint. Use `"unix:/path"` for Unix socket or
+      `"host:port"` for TCP. Required unless `:socket_path` is provided.
+
+    * `:grpc_opts` — `keyword()` — Options passed to `GRPC.Stub.connect/2`. Use `[cred: cred]`
+      to configure TLS for TCP connections. Defaults to `[]`.
+
+    * `:socket_path` — Deprecated. Use `:endpoint` with `"unix:"` prefix instead.
   """
 
   use Supervisor

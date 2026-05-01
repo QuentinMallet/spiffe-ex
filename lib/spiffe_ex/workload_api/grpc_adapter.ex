@@ -4,10 +4,10 @@ defmodule SpiffeEx.WorkloadAPI.GrpcAdapter do
   alias SpiffeEx.Proto.Workload.{JWTSVIDRequest, SpiffeWorkloadAPI}
 
   @impl true
-  def fetch_jwt_svid(socket_path, audience) do
+  def fetch_jwt_svid(endpoint, audience, grpc_opts \\ []) do
     start = System.monotonic_time(:millisecond)
 
-    case GRPC.Stub.connect("unix:#{socket_path}", []) do
+    case GRPC.Stub.connect(endpoint, grpc_opts) do
       {:ok, channel} ->
         request = %JWTSVIDRequest{audience: audience, spiffe_id: ""}
         do_fetch(channel, request, start)

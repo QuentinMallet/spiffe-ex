@@ -10,7 +10,7 @@ defmodule SpiffeEx.SvidCacheResilienceTest do
   defp svid_cache_opts(name) do
     [
       name: name,
-      socket_path: "/tmp/test.sock",
+      endpoint: "unix:/tmp/test.sock",
       workload_api_mod: SpiffeEx.MockWorkloadAPI,
       audience: ["test"],
       refresh_buffer_secs: 5

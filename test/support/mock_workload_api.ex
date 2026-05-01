@@ -2,7 +2,7 @@ defmodule SpiffeEx.MockWorkloadAPI do
   @behaviour SpiffeEx.WorkloadAPI
 
   @impl true
-  def fetch_jwt_svid(_socket_path, audience) do
+  def fetch_jwt_svid(_endpoint, audience, _grpc_opts) do
     expires_at = DateTime.add(DateTime.utc_now(), 300, :second)
     exp = DateTime.to_unix(expires_at)
 
@@ -35,7 +35,7 @@ defmodule SpiffeEx.ErrorWorkloadAPI do
   @behaviour SpiffeEx.WorkloadAPI
 
   @impl true
-  def fetch_jwt_svid(_socket_path, _audience) do
+  def fetch_jwt_svid(_endpoint, _audience, _grpc_opts) do
     {:error, :unavailable}
   end
 end

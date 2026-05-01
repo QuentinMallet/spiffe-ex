@@ -6,7 +6,7 @@ defmodule SpiffeEx.IntegrationTest do
       SpiffeEx.start_link(
         name: :integration_test_instance,
         workload_api_mod: SpiffeEx.MockWorkloadAPI,
-        socket_path: "/tmp/test.sock",
+        endpoint: "unix:/tmp/test.sock",
         audience: ["integration-test"],
         client_id: "test-client",
         # Short retry policy so authenticate() fails fast without OIDC provider

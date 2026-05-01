@@ -17,7 +17,7 @@ defmodule SpiffeEx.SvidCachePropertiesTest do
       {:ok, pid} =
         SpiffeEx.SvidCache.start_link(
           name: name,
-          socket_path: "/tmp/test.sock",
+          endpoint: "unix:/tmp/test.sock",
           workload_api_mod: SpiffeEx.MockWorkloadAPI,
           audience: [],
           refresh_buffer_secs: buffer
@@ -41,7 +41,7 @@ defmodule SpiffeEx.SvidCachePropertiesTest do
       {:ok, pid} =
         SpiffeEx.SvidCache.start_link(
           name: name,
-          socket_path: "/tmp/test.sock",
+          endpoint: "unix:/tmp/test.sock",
           workload_api_mod: SpiffeEx.MockWorkloadAPI,
           audience: ["test"],
           refresh_buffer_secs: 10

@@ -145,4 +145,53 @@ defmodule SpiffeEx.SvidCacheTest do
       assert captured.grpc_opts == [timeout: 5000]
     end
   end
+
+  describe "fetch_fresh/2" do
+    test "passes caller-specified audience to gRPC adapter, not startup audience", %{name: name} do
+      {:ok, agent} = Agent.start(fn -> %{} end, name: :capturing_mock)
+      on_exit(fn -> Agent.stop(agent) end)
+
+      # Cache started with startup audience ["startup-audience"]
+      start_cache(name,
+        endpoint: "unix:/tmp/test.sock",
+        workload_api_mod: SpiffeEx.CapturingMock,
+        audience: ["startup-audience"]
+      )
+
+      # fetch_fresh/2 must use the caller-specified audience, not the startup one
+      assert {:ok, svid} = SvidCache.fetch_fresh(name, "openbao")
+      captured = Agent.get(:capturing_mock, & &1)
+      assert captured.audience == ["openbao"],
+             "Expected audience [\"openbao\"] but got #{inspect(captured.audience)}"
+      assert is_binary(svid.token)
+    end
+
+    test "does not update cache", %{name: name} do
+      start_cache(name, audience: ["startup-audience"])
+      Process.sleep(50)
+
+      {:ok, cached_before} = SvidCache.get(name)
+      SvidCache.fetch_fresh(name, "other-audience")
+      {:ok, cached_after} = SvidCache.get(name)
+
+      # Cache should be unchanged after fetch_fresh
+      assert cached_before.token == cached_after.token
+    end
+
+    test "wraps string audience in list for gRPC adapter", %{name: name} do
+      {:ok, agent} = Agent.start(fn -> %{} end, name: :capturing_mock)
+      on_exit(fn -> Agent.stop(agent) end)
+
+      start_cache(name,
+        endpoint: "unix:/tmp/test.sock",
+        workload_api_mod: SpiffeEx.CapturingMock,
+        audience: ["startup"]
+      )
+
+      SvidCache.fetch_fresh(name, "openbao")
+      captured = Agent.get(:capturing_mock, & &1)
+      assert is_list(captured.audience)
+      assert captured.audience == ["openbao"]
+    end
+  end
 end

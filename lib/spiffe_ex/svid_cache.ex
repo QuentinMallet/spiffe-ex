@@ -65,6 +65,10 @@ defmodule SpiffeEx.SvidCache do
     {:ok, state}
   end
 
+  def fetch_fresh(name, audience) do
+    GenServer.call(via(name), {:fetch_fresh, audience})
+  end
+
   @impl true
   def handle_call(:get, _from, state) do
     case fetch_svid(state) do
@@ -74,6 +78,16 @@ defmodule SpiffeEx.SvidCache do
       {:error, reason, new_state} ->
         {:reply, {:error, reason}, new_state}
     end
+  end
+
+  @impl true
+  def handle_call({:fetch_fresh, audience}, _from, state) do
+    workload_mod = Keyword.get(state.opts, :workload_api_mod, SpiffeEx.WorkloadAPI.GrpcAdapter)
+    endpoint = resolve_endpoint(state.opts)
+    grpc_opts = resolve_grpc_opts(state.opts)
+
+    result = workload_mod.fetch_jwt_svid(endpoint, List.wrap(audience), grpc_opts)
+    {:reply, result, state}
   end
 
   @impl true

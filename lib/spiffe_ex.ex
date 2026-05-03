@@ -45,6 +45,20 @@ defmodule SpiffeEx do
     SpiffeEx.SvidCache.get(name)
   end
 
+  @doc """
+  Fetches a fresh JWT-SVID with the given audience, bypassing the cache.
+
+  Unlike `fetch_svid/2`, this always makes a gRPC call to the SPIRE agent
+  and uses the caller-specified audience. Use this when you need a JWT-SVID
+  for a specific audience (e.g. `"openbao"`) rather than the audience
+  configured at `start_link` time.
+  """
+  @spec fetch_jwt_svid(name :: atom(), audience :: String.t() | [String.t()]) ::
+          {:ok, SpiffeEx.SVID.t()} | {:error, atom()}
+  def fetch_jwt_svid(name \\ __MODULE__, audience) do
+    SpiffeEx.SvidCache.fetch_fresh(name, audience)
+  end
+
   @spec status(name :: atom()) :: map()
   def status(name \\ __MODULE__) do
     svid_result = SpiffeEx.SvidCache.get(name)

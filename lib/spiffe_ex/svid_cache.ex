@@ -46,7 +46,10 @@ defmodule SpiffeEx.SvidCache do
 
     opts =
       if Keyword.has_key?(opts, :socket_path) and not Keyword.has_key?(opts, :endpoint) do
-        Logger.warning("SpiffeEx: :socket_path is deprecated, use :endpoint instead (e.g. endpoint: \"unix:#{Keyword.fetch!(opts, :socket_path)}\")")
+        Logger.warning(
+          "SpiffeEx: :socket_path is deprecated, use :endpoint instead (e.g. endpoint: \"unix:#{Keyword.fetch!(opts, :socket_path)}\")"
+        )
+
         Keyword.put(opts, :endpoint, "unix:#{Keyword.fetch!(opts, :socket_path)}")
       else
         opts

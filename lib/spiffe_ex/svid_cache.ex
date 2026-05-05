@@ -33,6 +33,18 @@ defmodule SpiffeEx.SvidCache do
     ArgumentError ->
       :telemetry.execute([:spiffe_ex, :svid, :cache_miss], %{}, %{})
       GenServer.call(via(name), :get)
+  catch
+    # GenServer.call raises an :exit when the target process is not running
+    # (e.g. SpiffeEx supervisor not yet started or has crashed). Return the
+    # same error atom as when the SPIRE agent is genuinely unavailable so
+    # callers don't need to distinguish the two cases.
+    :exit, _ -> {:error, :workload_api_unavailable}
+  end
+
+  def fetch_fresh(name, audience) do
+    GenServer.call(via(name), {:fetch_fresh, audience})
+  catch
+    :exit, _ -> {:error, :workload_api_unavailable}
   end
 
   defp via(name), do: {:via, Registry, {SpiffeEx.Registry, {name, :svid_cache}}}
@@ -46,10 +58,7 @@ defmodule SpiffeEx.SvidCache do
 
     opts =
       if Keyword.has_key?(opts, :socket_path) and not Keyword.has_key?(opts, :endpoint) do
-        Logger.warning(
-          "SpiffeEx: :socket_path is deprecated, use :endpoint instead (e.g. endpoint: \"unix:#{Keyword.fetch!(opts, :socket_path)}\")"
-        )
-
+        Logger.warning("SpiffeEx: :socket_path is deprecated, use :endpoint instead (e.g. endpoint: \"unix:#{Keyword.fetch!(opts, :socket_path)}\")")
         Keyword.put(opts, :endpoint, "unix:#{Keyword.fetch!(opts, :socket_path)}")
       else
         opts
@@ -66,10 +75,6 @@ defmodule SpiffeEx.SvidCache do
 
     send(self(), :refresh)
     {:ok, state}
-  end
-
-  def fetch_fresh(name, audience) do
-    GenServer.call(via(name), {:fetch_fresh, audience})
   end
 
   @impl true

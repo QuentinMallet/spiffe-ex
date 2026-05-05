@@ -4,9 +4,7 @@ defmodule SpiffeEx.CapturingMock do
   @impl true
   def fetch_jwt_svid(endpoint, audience, grpc_opts) do
     if pid = Process.whereis(:capturing_mock) do
-      Agent.update(pid, fn _ ->
-        %{endpoint: endpoint, audience: audience, grpc_opts: grpc_opts}
-      end)
+      Agent.update(pid, fn _ -> %{endpoint: endpoint, audience: audience, grpc_opts: grpc_opts} end)
     end
 
     expires_at = DateTime.add(DateTime.utc_now(), 300, :second)
@@ -117,16 +115,14 @@ defmodule SpiffeEx.SvidCacheTest do
     test "deprecated socket_path logs warning and still works", %{name: name} do
       log =
         capture_log(fn ->
-          start_supervised!(
-            {SvidCache,
-             [
-               name: name,
-               socket_path: "/tmp/agent.sock",
-               workload_api_mod: SpiffeEx.MockWorkloadAPI,
-               audience: ["test"],
-               refresh_buffer_secs: 10
-             ]}
-          )
+          start_supervised!({SvidCache,
+           [
+             name: name,
+             socket_path: "/tmp/agent.sock",
+             workload_api_mod: SpiffeEx.MockWorkloadAPI,
+             audience: ["test"],
+             refresh_buffer_secs: 10
+           ]})
         end)
 
       assert log =~ ":socket_path"
@@ -165,10 +161,8 @@ defmodule SpiffeEx.SvidCacheTest do
       # fetch_fresh/2 must use the caller-specified audience, not the startup one
       assert {:ok, svid} = SvidCache.fetch_fresh(name, "openbao")
       captured = Agent.get(:capturing_mock, & &1)
-
       assert captured.audience == ["openbao"],
              "Expected audience [\"openbao\"] but got #{inspect(captured.audience)}"
-
       assert is_binary(svid.token)
     end
 
